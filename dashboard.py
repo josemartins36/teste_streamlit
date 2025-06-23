@@ -17,7 +17,7 @@ if uploaded_file is not None:
     df = pd.read_csv(uploaded_file)
 else:
     st.sidebar.info('Nenhum arquivo enviado. Usando dados de exemplo.')
-    df = pd.read_csv('data/vendas.csv')
+    df = pd.read_csv('vendas.csv')
 
 # Mostrar dados
 st.subheader('🗂️ Dados')
