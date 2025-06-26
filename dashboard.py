@@ -10,9 +10,10 @@ def load_data():
 
 df = load_data()
 
-cols = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level', 'hypertension', 'heart_disease']
+# 🧪 Apenas variáveis contínuas relevantes
+cols = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
 
-# 🎛️ Seleção do grupo a visualizar
+# 🎛️ Filtro do grupo
 filtro = st.radio(
     "Escolha o grupo para visualizar:",
     ("Todos", "Apenas Diabéticos", "Apenas Não Diabéticos")
@@ -25,7 +26,7 @@ elif filtro == "Apenas Não Diabéticos":
 else:
     df_filtrado = df
 
-# 🎨 Gráfico Parallel Coordinates com Plotly Express
+# 📊 Gráfico Parallel Coordinates
 fig = px.parallel_coordinates(
     df_filtrado,
     dimensions=cols,
@@ -37,11 +38,10 @@ fig = px.parallel_coordinates(
         'bmi': 'IMC',
         'HbA1c_level': 'HbA1c',
         'blood_glucose_level': 'Glicose',
-        'hypertension': 'Hipertensão',
-        'heart_disease': 'Doença Cardíaca',
         'diabetes': 'Diabetes'
     }
 )
 
 st.plotly_chart(fig, use_container_width=True)
+
 
