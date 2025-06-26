@@ -1,73 +1,80 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-# Configuração da página
-st.set_page_config(page_title="Dashboard - Diabetes", layout="wide", page_icon="🩺")
+st.set_page_config(page_title="Dashboard Diabetes", layout="wide", page_icon="🩺")
+st.title("🩺 Dashboard Interativo - Predição de Diabetes")
 
-st.title("🩺 Dashboard Interativo de Predição de Diabetes")
-
-# Função para carregar os dados
+# === Carregar dados ===
 @st.cache_data
-def carregar_dados():
-    df = pd.read_csv("diabetes_prediction_dataset.csv")
-    return df
+def load_data():
+    return pd.read_csv("data/diabetes_prediction_dataset.csv")
 
-df = carregar_dados()
+df = load_data()
 
-# Sidebar com filtros
-st.sidebar.header("🎛️ Filtros")
-genero = st.sidebar.selectbox("Selecione o gênero", ["Todos"] + sorted(df['gender'].unique()))
-fumante = st.sidebar.multiselect("Histórico de tabagismo", options=df['smoking_history'].unique())
-faixa_idade = st.sidebar.slider("Faixa etária", int(df['age'].min()), int(df['age'].max()), (20, 60))
+# === Sidebar ===
+st.sidebar.header("🎛️ Filtros Interativos")
 
-# Aplicação dos filtros
-df_filtrado = df.copy()
+# Filtro por gênero
+genero = st.sidebar.selectbox("Gênero", ["Todos"] + sorted(df["gender"].unique().tolist()))
+# Filtro por tabagismo
+fumante = st.sidebar.multiselect("Histórico de tabagismo", df["smoking_history"].unique().tolist())
+# Filtro por idade
+idade = st.sidebar.slider("Idade (anos)", int(df["age"].min()), int(df["age"].max()), (20, 60))
+# Mostrar correlação
+mostrar_correlacao = st.sidebar.checkbox("Mostrar matriz de correlação", value=False)
+
+# === Aplicar filtros ===
+df_filtro = df.copy()
 
 if genero != "Todos":
-    df_filtrado = df_filtrado[df_filtrado["gender"] == genero]
+    df_filtro = df_filtro[df_filtro["gender"] == genero]
 
 if fumante:
-    df_filtrado = df_filtrado[df_filtrado["smoking_history"].isin(fumante)]
+    df_filtro = df_filtro[df_filtro["smoking_history"].isin(fumante)]
 
-df_filtrado = df_filtrado[(df_filtrado["age"] >= faixa_idade[0]) & (df_filtrado["age"] <= faixa_idade[1])]
+df_filtro = df_filtro[(df_filtro["age"] >= idade[0]) & (df_filtro["age"] <= idade[1])]
 
-# === Métricas rápidas ===
+# === Métricas ===
 col1, col2, col3 = st.columns(3)
-col1.metric("Total de Registros", len(df_filtrado))
-col2.metric("Casos de Diabetes", df_filtrado["diabetes"].sum())
-col3.metric("Porcentagem Diabéticos", f"{100 * df_filtrado['diabetes'].mean():.1f}%")
+col1.metric("📊 Total de Registros", len(df_filtro))
+col2.metric("🧪 Casos de Diabetes", df_filtro["diabetes"].sum())
+col3.metric("💯 % com Diabetes", f"{100 * df_filtro['diabetes'].mean():.1f}%")
 
 st.divider()
 
-# === Gráfico 1: Faixa Etária x Diabetes ===
-st.subheader("📊 Distribuição de Diabetes por Faixa Etária")
-df_filtrado['faixa_etaria'] = pd.cut(df_filtrado['age'], bins=[0, 20, 40, 60, 80, 120],
-                                     labels=['0-20', '21-40', '41-60', '61-80', '81+'])
-
-fig1 = px.histogram(df_filtrado, x='faixa_etaria', color='diabetes', barmode='group',
-                    labels={'faixa_etaria': 'Faixa Etária', 'diabetes': 'Diabetes'})
+# === Gráfico 1: Histograma por faixa etária ===
+st.subheader("📈 Distribuição por Faixa Etária")
+df_filtro["faixa"] = pd.cut(df_filtro["age"], bins=[0,20,40,60,80,120], labels=["0-20","21-40","41-60","61-80","81+"])
+fig1 = px.histogram(df_filtro, x="faixa", color="diabetes", barmode="group", text_auto=True)
 st.plotly_chart(fig1, use_container_width=True)
 
-# === Gráfico 2: IMC vs Glicose ===
-st.subheader("🧬 Correlação entre IMC e Nível de Glicose")
-fig2 = px.scatter(df_filtrado, x='bmi', y='blood_glucose_level',
-                  color='diabetes', hover_data=['age', 'gender', 'hypertension'],
-                  labels={'bmi': 'IMC', 'blood_glucose_level': 'Glicose'})
+# === Gráfico 2: Dispersão IMC vs Glicose ===
+st.subheader("📉 Relação IMC × Nível de Glicose")
+fig2 = px.scatter(df_filtro, x="bmi", y="blood_glucose_level", color="diabetes",
+                  hover_data=["age", "gender", "hypertension"], symbol="gender")
 st.plotly_chart(fig2, use_container_width=True)
 
-# === Gráfico 3: Proporção por Gênero ===
-st.subheader("🚻 Proporção de Diabéticos por Gênero (com base no filtro)")
-proporcao = df_filtrado.groupby('gender')['diabetes'].mean().reset_index()
-fig3 = px.bar(proporcao, x='gender', y='diabetes',
-              labels={'gender': 'Gênero', 'diabetes': 'Proporção de Diabéticos'},
-              color='gender', text='diabetes')
+# === Gráfico 3: Proporção de diabetes por gênero ===
+st.subheader("🚻 Proporção de Diabetes por Gênero")
+proporcao = df_filtro.groupby("gender")["diabetes"].mean().reset_index()
+fig3 = px.bar(proporcao, x="gender", y="diabetes", text="diabetes", color="gender")
+fig3.update_layout(yaxis_tickformat=".0%")
 st.plotly_chart(fig3, use_container_width=True)
 
-# === Tabela ===
-st.subheader("🗃️ Dados Filtrados")
-st.dataframe(df_filtrado, use_container_width=True)
+# === Correlação (opcional) ===
+if mostrar_correlacao:
+    st.subheader("📊 Matriz de Correlação")
+    corr = df_filtro.drop(columns=["gender", "smoking_history"]).corr()
+    fig_corr, ax = plt.subplots(figsize=(8,6))
+    sns.heatmap(corr, annot=True, cmap="coolwarm", fmt=".2f", ax=ax)
+    st.pyplot(fig_corr)
 
-# Rodapé
-st.caption("Desenvolvido com ❤️ usando Streamlit e Plotly")
+# === Tabela ===
+st.subheader("🗃️ Dados filtrados")
+st.dataframe(df_filtro, use_container_width=True)
+
+st.caption("📌 Use os filtros no menu lateral para personalizar sua análise.")
 
