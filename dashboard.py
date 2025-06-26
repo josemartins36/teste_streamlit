@@ -100,3 +100,8 @@ fig_cross = px.bar(df_filtered, x='faixa_etaria', y='blood_glucose_level',
                    height=500)
 
 st.plotly_chart(fig_cross, use_container_width=True)
+
+df['faixa_etaria'] = pd.cut(df['age'], bins=[0, 20, 40, 60, 80, 120],
+                            labels=['0-20', '21-40', '41-60', '61-80', '81+'])
+fig = px.histogram(df, x='faixa_etaria', color='diabetes', barmode='group')
+
