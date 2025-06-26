@@ -6,7 +6,7 @@ st.title("Gráfico Parallel Coordinates - Diabetes")
 
 @st.cache_data
 def load_data():
-    return pd.read_csv("data/diabetes_prediction_dataset.csv")
+    return pd.read_csv("diabetes_prediction_dataset.csv")
 
 df = load_data()
 
