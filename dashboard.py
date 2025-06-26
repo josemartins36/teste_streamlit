@@ -1,84 +1,195 @@
+"""
+Exemplo 2 - Widgets Interativos
+
+Este exemplo explora os diferentes widgets interativos disponíveis no Streamlit:
+- Botões e checkboxes
+- Campos de entrada (texto e números)
+- Seletores (dropdown, multi-select)
+- Sliders
+- Radio buttons
+- Text areas
+
+O objetivo é mostrar como criar interatividade na aplicação e
+responder a ações do usuário.
+
+Autor: Victor Gomes
+Data: Junho 2024
+"""
+
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.figure_factory as ff
+import numpy as np
 
-st.set_page_config(page_title="Dashboard Diabetes", layout="wide")
-st.title("🩺 Dashboard Interativo - Predição de Diabetes")
+# Configuração básica da página
+st.set_page_config(page_title="Exemplo 2: Widgets Interativos", page_icon="🎛️")
 
-# ====== Carregamento de Dados ======
+# Título e introdução
+st.title('Widgets Interativos do Streamlit')
+st.markdown('Este exemplo demonstra os principais widgets interativos disponíveis no Streamlit usando dados de Natal/RN.')
+
+# Função para carregar os dados
 @st.cache_data
-def load_data():
-    df = pd.read_csv('diabetes_prediction_dataset.csv')
+def carregar_dados():
+    # Carrega o dataset contendo informações socioeconômicas dos bairros de Natal/RN diretamente do GitHub
+    df = pd.read_csv('https://raw.githubusercontent.com/igendriz/DCA3501-Ciencia-Dados/main/Dataset/Bairros_Natal_v01.csv')
+    
+    # Remove linhas com quaisquer valores ausentes (NaN)
+    df = df.dropna()
+    
+    # Corrige nomes específicos de bairros para padronização (sem acentos ou espaços)
+    df.loc[0, "bairro"] = 'ns_apresentacao'   # Nossa Senhora da Apresentação
+    df.loc[34, "bairro"] = 'ns_nazare'        # Nossa Senhora de Nazaré
+    df.loc[32, "bairro"] = 'c_esperanca'      # Cidade da Esperança
+    
+    # Remove a coluna 'Unnamed: 0', gerada automaticamente pelo salvamento anterior do CSV
+    if 'Unnamed: 0' in df.columns:
+        df = df.drop(columns='Unnamed: 0')
+    
     return df
 
-df = load_data()
+# Carrega os dados
+df_natal = carregar_dados()
 
+# Sidebar para organizar os controles
+st.sidebar.header('Controles')
 
-# ====== 1. Distribuição por Faixa Etária ======
-st.subheader("📊 Distribuição de Diabetes por Faixa Etária")
+# === Botões e Checkbox ===
+st.header('Botões e Checkbox')
+col1, col2 = st.columns(2)
 
-df['faixa_etaria'] = pd.cut(df['age'],
-                            bins=[0, 20, 40, 60, 80, 120],
-                            labels=['0-20', '21-40', '41-60', '61-80', '81+'])
+with col1:
+    if st.button('Mostrar estatísticas'):
+        st.write('Estatísticas básicas da renda mensal por pessoa:')
+        st.write(df_natal['renda_mensal_pessoa'].describe())
+    else:
+        st.write('Clique no botão para ver estatísticas.')
+    
+    mostrar_mapa = st.checkbox('Mostrar mapa de regiões')
+    if mostrar_mapa:
+        st.write('Quantidade de bairros por região:')
+        st.write(df_natal['regiao'].value_counts())
+    
+st.divider()
 
-fig1 = px.histogram(df, x='faixa_etaria', color='diabetes',
-                    barmode='group',
-                    title="Distribuição de Diabetes por Faixa Etária",
-                    labels={'diabetes': 'Diabetes'},
-                    category_orders={'diabetes': [0, 1]})
+# === Campos de entrada ===
+st.header('Campos de Entrada')
+col1, col2 = st.columns(2)
 
-st.plotly_chart(fig1, use_container_width=True)
+with col1:
+    bairro_busca = st.text_input('Digite o nome de um bairro para buscar')
+    if bairro_busca:
+        resultados = df_natal[df_natal['bairro'].str.contains(bairro_busca.lower())]
+        if not resultados.empty:
+            st.write(f'Resultados para "{bairro_busca}":')
+            st.dataframe(resultados)
+        else:
+            st.warning(f'Nenhum bairro encontrado com "{bairro_busca}"')
+    
+    limiar_renda = st.number_input('Limiar de renda mensal (R$)', 
+                                  min_value=float(df_natal['renda_mensal_pessoa'].min()), 
+                                  max_value=float(df_natal['renda_mensal_pessoa'].max()),
+                                  value=1000.0,
+                                  step=100.0)
+    st.write(f'Bairros com renda acima de R$ {limiar_renda:.2f}: {len(df_natal[df_natal["renda_mensal_pessoa"] > limiar_renda])}')
 
+with col2:
+    notas = st.text_area('Anotações sobre a análise', height=100)
+    if notas:
+        st.info('Anotações salvas!')
 
-# ====== 2. Correlação entre BMI e Glicose ======
-st.subheader("🧬 Correlação entre IMC e Glicose")
+st.divider()
+# === Seletores ===
+st.header('Seletores')
+col1, col2 = st.columns(2)
 
-fig2 = px.scatter(df, x='bmi', y='blood_glucose_level',
-                  color='diabetes',
-                  hover_data=['age', 'gender'],
-                  title="IMC vs Nível de Glicose",
-                  labels={'bmi': 'IMC', 'blood_glucose_level': 'Glicose'})
+with col1:
+    regiao = st.selectbox(
+        'Escolha uma região',
+        ['Todas'] + sorted(df_natal['regiao'].unique().tolist())
+    )
+    
+    if regiao != 'Todas':
+        st.write(f'Dados da região {regiao}:')
+        st.dataframe(df_natal[df_natal['regiao'] == regiao])
+    else:
+        st.write('Mostrando todas as regiões')
+    
+    colunas_selecionadas = st.multiselect(
+        'Selecione as colunas para visualizar',
+        df_natal.columns.tolist(),
+        default=['bairro', 'regiao', 'populacao']
+    )
+    if colunas_selecionadas:
+        st.dataframe(df_natal[colunas_selecionadas])
 
-st.plotly_chart(fig2, use_container_width=True)
+with col2:
+    metrica = st.radio(
+        'Escolha uma métrica para análise',
+        ['Renda Mensal por Pessoa', 'Rendimento Nominal Médio', 'População']
+    )
+    
+    if metrica == 'Renda Mensal por Pessoa':
+        coluna = 'renda_mensal_pessoa'
+        unidade = 'R$'
+    elif metrica == 'Rendimento Nominal Médio':
+        coluna = 'rendimento_nominal_medio'
+        unidade = 'salários mínimos'
+    else:
+        coluna = 'populacao'
+        unidade = 'habitantes'
+    
+    st.write(f'Estatísticas de {metrica}:')
+    st.write(f'Média: {df_natal[coluna].mean():.2f} {unidade}')
+    st.write(f'Máximo: {df_natal[coluna].max():.2f} {unidade}')
+    st.write(f'Mínimo: {df_natal[coluna].min():.2f} {unidade}')
 
+# === Sliders ===
+st.header('Sliders')
+col1, col2 = st.columns(2)
 
-# ====== 3. Matriz de Correlação ======
-st.subheader("💥 Matriz de Correlação")
+with col1:
+    n_bairros = st.slider('Número de bairros para mostrar', 1, len(df_natal), 5)
+    st.write(f'Top {n_bairros} bairros com maior renda:')
+    st.dataframe(df_natal.sort_values('renda_mensal_pessoa', ascending=False).head(n_bairros))
 
-corr = df.corr(numeric_only=True)
-fig3 = px.imshow(corr, text_auto=True,
-                 title="Matriz de Correlação",
-                 color_continuous_scale='RdBu_r')
+with col2:
+    faixa_populacao = st.slider(
+        'Faixa de população',
+        float(df_natal['populacao'].min()), 
+        float(df_natal['populacao'].max()),
+        (10000.0, 30000.0)
+    )
+    st.write(f'Bairros com população entre {faixa_populacao[0]:.0f} e {faixa_populacao[1]:.0f} habitantes:')
+    filtro_pop = df_natal[(df_natal['populacao'] >= faixa_populacao[0]) & 
+                          (df_natal['populacao'] <= faixa_populacao[1])]
+    st.dataframe(filtro_pop)
 
-st.plotly_chart(fig3, use_container_width=True)
+# === Seletores de Data e Hora ===
+st.header('Data e Hora')
+col1, col2 = st.columns(2)
 
+with col1:
+    import datetime
+    d = st.date_input('Data da análise', datetime.date.today())
+    st.write(f'Análise realizada em: {d}')
 
-# ====== 4. Proporção de Diabéticos por Gênero ======
-st.subheader("🚻 Proporção de Diabetes por Gênero")
+with col2:
+    t = st.time_input('Horário da análise', datetime.time(12, 0))
+    st.write(f'Horário: {t}')
 
-df_gender = df.groupby('gender')['diabetes'].value_counts(normalize=True)\
-              .rename('proporcao').reset_index()
+# === Upload de Arquivo ===
+st.header('Upload de Arquivo')
+st.write("Você pode fazer upload de um arquivo CSV com dados adicionais para complementar a análise:")
+arquivo = st.file_uploader("Escolha um arquivo CSV")
+if arquivo is not None:
+    try:
+        # Tenta ler como CSV
+        df_upload = pd.read_csv(arquivo)
+        st.write('Visualização dos dados enviados:')
+        st.dataframe(df_upload.head())
+    except Exception as e:
+        st.error(f'Erro ao ler o arquivo: {e}')
+        st.info('Tente fazer upload de um arquivo CSV válido.')
 
-# Filtrando apenas os casos positivos
-df_diab = df_gender[df_gender['diabetes'] == 1]
-
-fig4 = px.bar(df_diab, x='proporcao', y='gender',
-              orientation='h', color='gender',
-              text='proporcao',
-              labels={'proporcao': 'Proporção', 'gender': 'Gênero'},
-              title="Proporção de Diabéticos por Gênero")
-
-st.plotly_chart(fig4, use_container_width=True)
-
-
-# ====== 5. Distribuição de Diabetes por Tabagismo ======
-st.subheader("🚬 Distribuição de Diabetes por Histórico de Tabagismo")
-
-fig5 = px.pie(df[df['diabetes'] == 1],
-              names='smoking_history',
-              title="Histórico de Tabagismo entre Diabéticos",
-              color_discrete_sequence=px.colors.qualitative.Set3)
-
-st.plotly_chart(fig5, use_container_width=True)
-
+# Nota de rodapé
+st.caption('Este exemplo demonstra os principais widgets interativos do Streamlit para entrada de dados e controle de interface, utilizando dados reais de Natal/RN.')
