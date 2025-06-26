@@ -4,7 +4,7 @@ import plotly.express as px
 
 st.set_page_config(page_title="Dashboard Diabetes", layout="wide")
 
-st.title('🩺 Dashboard - Análise de Dados sobre Diabetes')
+st.title('Dashboard - Análise de Dados sobre Diabetes')
 
 # ================= Carregar Dados ==================
 @st.cache_data
@@ -14,7 +14,7 @@ def load_data():
 
 df = load_data()
 
-st.subheader('👀 Dados - Primeiras linhas')
+st.subheader('Dados - Primeiras linhas')
 st.dataframe(df.head())
 
 
@@ -29,7 +29,7 @@ st.plotly_chart(fig_gender, use_container_width=True)
 
 
 # ================= Variáveis Numéricas ==================
-st.subheader('🔬 Distribuição das Variáveis Numéricas')
+st.subheader('Distribuição das Variáveis Numéricas')
 
 numerical_cols = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
 col1, col2 = st.columns(2)
@@ -46,7 +46,7 @@ for i, col in enumerate(numerical_cols):
 
 
 # ================= Matriz de Correlação ==================
-st.subheader('🧠 Matriz de Correlação')
+st.subheader('Matriz de Correlação')
 
 corr = df.corr(numeric_only=True)
 
@@ -76,7 +76,7 @@ df_filtered = df[
 
 
 # ================= Distribuição Diabetes ==================
-st.subheader('📑 Distribuição de Diabetes (Pós-Filtros)')
+st.subheader('Distribuição de Diabetes (Pós-Filtros)')
 
 fig_diabetes = px.histogram(df_filtered, x='diabetes', color='diabetes',
                              title='Distribuição de Diabetes',
@@ -86,7 +86,7 @@ st.plotly_chart(fig_diabetes, use_container_width=True)
 
 
 # ================= Análise Cruzada ==================
-st.subheader('📊 Glicose Média por Faixa Etária e Gênero')
+st.subheader('Glicose Média por Faixa Etária e Gênero')
 
 # Criar faixa etária
 df_filtered['faixa_etaria'] = pd.cut(df_filtered['age'],
