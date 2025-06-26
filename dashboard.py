@@ -9,7 +9,7 @@ st.title("🩺 Dashboard Interativo - Predição de Diabetes")
 # ====== Carregamento de Dados ======
 @st.cache_data
 def load_data():
-    df = pd.read_csv('data/diabetes_prediction_dataset.csv')
+    df = pd.read_csv('diabetes_prediction_dataset.csv')
     return df
 
 df = load_data()
