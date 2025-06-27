@@ -64,22 +64,19 @@ elif visualizacao == "🎞️ Dispersão Animada":
     with col2:
         eixo_y = st.selectbox("Eixo Y", [v for v in variaveis if v != eixo_x], index=1)
 
-# Ordenar por idade para que o slider seja linear
-df_filtrado = df_filtrado.sort_values(by="age")
-
-fig = px.scatter(
-    df_filtrado,
-    x=eixo_x,
-    y=eixo_y,
-    animation_frame="age",
-    color="diabetes",
-    hover_name="gender",
-    size_max=12,
-    range_x=[df[eixo_x].min(), df[eixo_x].max()],
-    range_y=[df[eixo_y].min(), df[eixo_y].max()],
-    title=f"{eixo_y} vs {eixo_x} por Idade"
-)
-
+    fig = px.scatter(
+        df_filtrado,
+        x=eixo_x,
+        y=eixo_y,
+        animation_frame="age",
+        color="diabetes",
+        hover_name="gender",
+        size_max=12,
+        range_x=[df[eixo_x].min(), df[eixo_x].max()],
+        range_y=[df[eixo_y].min(), df[eixo_y].max()],
+        title=f"{eixo_y} vs {eixo_x} por Idade"
+    )
 
     st.plotly_chart(fig, use_container_width=True)
+
 
