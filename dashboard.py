@@ -78,5 +78,7 @@ elif visualizacao == "🎞️ Dispersão Animada":
     )
 
     st.plotly_chart(fig, use_container_width=True)
+    
+fig = px.treemap(df_filtrado, path=["gender", "smoking_history", "diabetes"])
 
 
