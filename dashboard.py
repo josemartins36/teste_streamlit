@@ -79,6 +79,35 @@ elif visualizacao == "🎞️ Dispersão Animada":
 
     st.plotly_chart(fig, use_container_width=True)
     
-fig = px.treemap(df_filtrado, path=["gender", "smoking_history", "diabetes"])
+# --- Gráfico 3: Treemap Interativo ---
+st.subheader("🌳 Treemap Interativo")
+
+st.markdown(
+    "Explore proporções hierárquicas no dataset com base em colunas categóricas como gênero, "
+    "histórico de fumo e diabetes. Cada nível da hierarquia pode ser selecionado abaixo."
+)
+
+# Opções categóricas disponíveis
+opcoes_categoricas = ["gender", "smoking_history", "diabetes"]
+
+# Multiselect para o caminho hierárquico do Treemap
+path_selecionado = st.multiselect(
+    "Selecione a hierarquia do Treemap (ordem importa):",
+    options=opcoes_categoricas,
+    default=["gender", "smoking_history", "diabetes"]
+)
+
+if len(path_selecionado) >= 2:
+    fig = px.treemap(
+        df_filtrado,
+        path=path_selecionado,
+        color="diabetes",
+        color_continuous_scale=["lightblue", "lightgreen"],
+        title="Treemap Hierárquico"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.warning("Por favor, selecione pelo menos dois níveis hierárquicos para o Treemap.")
+
 
 
