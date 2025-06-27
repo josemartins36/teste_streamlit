@@ -10,12 +10,6 @@ st.title("📊 Dashboard Interativo: Predição de Diabetes")
 def load_data():
     df = pd.read_csv("diabetes_prediction_dataset.csv")
     df['age'] = df['age'].astype(int)
-
-    # Agrupar em faixas etárias
-    bins = [0, 10, 20, 30, 40, 50, 60, 70, 80, 100]
-    labels = [f"{i}-{i+9}" for i in bins[:-1]]
-    df['faixa_etaria'] = pd.cut(df['age'], bins=bins, labels=labels, right=False)
-
     return df
 
 df = load_data()
@@ -60,7 +54,7 @@ if visualizacao == "📈 Coordenadas Paralelas":
 
 # --- Gráfico 2: Dispersão Animada ---
 elif visualizacao == "🎞️ Dispersão Animada":
-    st.subheader("🎞️ Gráfico de Dispersão Animado por Faixa Etária")
+    st.subheader("🎞️ Gráfico de Dispersão Animado por Idade")
 
     variaveis = ['bmi', 'HbA1c_level', 'blood_glucose_level']
 
@@ -74,15 +68,14 @@ elif visualizacao == "🎞️ Dispersão Animada":
         df_filtrado,
         x=eixo_x,
         y=eixo_y,
-        animation_frame="faixa_etaria",
+        animation_frame="age",
         color="diabetes",
         hover_name="gender",
         size_max=12,
         range_x=[df[eixo_x].min(), df[eixo_x].max()],
         range_y=[df[eixo_y].min(), df[eixo_y].max()],
-        title=f"{eixo_y} vs {eixo_x} por Faixa Etária"
+        title=f"{eixo_y} vs {eixo_x} por Idade"
     )
 
     st.plotly_chart(fig, use_container_width=True)
-
 
