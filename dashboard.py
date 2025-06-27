@@ -16,7 +16,7 @@ df = df.sort_values(by="age")  # para animações e sliders
 st.sidebar.title("🔎 Selecione um gráfico:")
 opcao = st.sidebar.radio(
     "Escolha uma visualização:",
-    ["Parallel Coordinates", "Treemap", "Gráfico Animado por Idade", "Boxplot", "Histograma"]
+    ["Parallel Coordinates", "Boxplot", "Histograma"]
 )
 
 # 🧪 Variáveis contínuas
