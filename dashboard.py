@@ -53,54 +53,7 @@ if opcao == "Parallel Coordinates":
     st.plotly_chart(fig, use_container_width=True)
 
 # ==========================
-# 2. Treemap
-# ==========================
-elif opcao == "Treemap":
-    st.subheader("🌳 Treemap Interativo")
-
-    st.markdown("Selecione abaixo as variáveis categóricas para compor a hierarquia do Treemap.")
-    categorias = ["gender", "smoking_history", "diabetes"]
-
-    path = st.multiselect(
-        "Hierarquia (ordem importa):",
-        options=categorias,
-        default=["gender", "smoking_history", "diabetes"]
-    )
-
-    if len(path) >= 2:
-        fig = px.treemap(
-            df_filtrado,
-            path=path,
-            title="Treemap Hierárquico"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("Selecione pelo menos duas variáveis para montar a hierarquia.")
-
-# ==========================
-# 3. Gráfico Animado
-# ==========================
-elif opcao == "Gráfico Animado por Idade":
-    st.subheader("🎥 Animação: Comparação por Faixa Etária")
-
-    eixo_x = st.selectbox("Eixo X", cols_continuas, index=0)
-    eixo_y = st.selectbox("Eixo Y", cols_continuas, index=1)
-
-    fig = px.scatter(
-        df_filtrado,
-        x=eixo_x,
-        y=eixo_y,
-        animation_frame="age",
-        color="diabetes",
-        hover_name="gender",
-        range_x=[df[eixo_x].min(), df[eixo_x].max()],
-        range_y=[df[eixo_y].min(), df[eixo_y].max()],
-        title=f"{eixo_y} vs {eixo_x} por Idade"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-# ==========================
-# 4. Boxplot Comparativo
+# 2. Boxplot Comparativo
 # ==========================
 elif opcao == "Boxplot":
     st.subheader("📦 Boxplot por Diabetes")
@@ -111,7 +64,7 @@ elif opcao == "Boxplot":
     st.plotly_chart(fig, use_container_width=True)
 
 # ==========================
-# 5. Histograma Comparativo
+# 3. Histograma Comparativo
 # ==========================
 elif opcao == "Histograma":
     st.subheader("📊 Histograma Empilhado")
