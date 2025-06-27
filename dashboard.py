@@ -3,41 +3,42 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="Dashboard Interativo - Diabetes", layout="wide")
-st.title("📊 Dashboard Interativo: Predição de Diabetes")
+st.title("📊 Dashboard Interativo - Predição de Diabetes")
 
-# --- Carregar e preparar dados ---
 @st.cache_data
 def load_data():
-    df = pd.read_csv("diabetes_prediction_dataset.csv")
-    df['age'] = df['age'].astype(int)
-    return df
+    return pd.read_csv("diabetes_prediction_dataset.csv")
 
 df = load_data()
+df = df.sort_values(by="age")  # para animações e sliders
 
-# --- Sidebar ---
-st.sidebar.header("🔧 Controles")
+# 🎛️ Sidebar
+st.sidebar.title("🔎 Selecione um gráfico:")
+opcao = st.sidebar.radio(
+    "Escolha uma visualização:",
+    ["Parallel Coordinates", "Treemap", "Gráfico Animado por Idade", "Boxplot", "Histograma"]
+)
 
-visualizacao = st.sidebar.radio("Tipo de gráfico:", ["📈 Coordenadas Paralelas", "🎞️ Dispersão Animada"])
+# 🧪 Variáveis contínuas
+cols_continuas = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
 
-grupo = st.sidebar.radio("Grupo:", ["Todos", "Apenas Diabéticos", "Apenas Não Diabéticos"])
-
-# --- Filtragem de dados ---
+# 🎛️ Filtro de grupo
+grupo = st.sidebar.radio("Grupo a visualizar:", ["Todos", "Apenas Diabéticos", "Apenas Não Diabéticos"])
 if grupo == "Apenas Diabéticos":
     df_filtrado = df[df["diabetes"] == 1]
 elif grupo == "Apenas Não Diabéticos":
     df_filtrado = df[df["diabetes"] == 0]
 else:
-    df_filtrado = df
+    df_filtrado = df.copy()
 
-# --- Gráfico 1: Coordenadas Paralelas ---
-if visualizacao == "📈 Coordenadas Paralelas":
-    st.subheader("📈 Gráfico de Coordenadas Paralelas")
-
-    cols = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
-
+# ==========================
+# 1. Parallel Coordinates
+# ==========================
+if opcao == "Parallel Coordinates":
+    st.subheader("🔗 Gráfico Parallel Coordinates")
     fig = px.parallel_coordinates(
         df_filtrado,
-        dimensions=cols,
+        dimensions=cols_continuas,
         color="diabetes",
         color_continuous_scale=px.colors.diverging.Tealrose,
         color_continuous_midpoint=0.5,
@@ -49,20 +50,41 @@ if visualizacao == "📈 Coordenadas Paralelas":
             "diabetes": "Diabetes"
         }
     )
-
     st.plotly_chart(fig, use_container_width=True)
 
-# --- Gráfico 2: Dispersão Animada ---
-elif visualizacao == "🎞️ Dispersão Animada":
-    st.subheader("🎞️ Gráfico de Dispersão Animado por Idade")
+# ==========================
+# 2. Treemap
+# ==========================
+elif opcao == "Treemap":
+    st.subheader("🌳 Treemap Interativo")
 
-    variaveis = ['bmi', 'HbA1c_level', 'blood_glucose_level']
+    st.markdown("Selecione abaixo as variáveis categóricas para compor a hierarquia do Treemap.")
+    categorias = ["gender", "smoking_history", "diabetes"]
 
-    col1, col2 = st.columns(2)
-    with col1:
-        eixo_x = st.selectbox("Eixo X", variaveis, index=0)
-    with col2:
-        eixo_y = st.selectbox("Eixo Y", [v for v in variaveis if v != eixo_x], index=1)
+    path = st.multiselect(
+        "Hierarquia (ordem importa):",
+        options=categorias,
+        default=["gender", "smoking_history", "diabetes"]
+    )
+
+    if len(path) >= 2:
+        fig = px.treemap(
+            df_filtrado,
+            path=path,
+            title="Treemap Hierárquico"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Selecione pelo menos duas variáveis para montar a hierarquia.")
+
+# ==========================
+# 3. Gráfico Animado
+# ==========================
+elif opcao == "Gráfico Animado por Idade":
+    st.subheader("🎥 Animação: Comparação por Faixa Etária")
+
+    eixo_x = st.selectbox("Eixo X", cols_continuas, index=0)
+    eixo_y = st.selectbox("Eixo Y", cols_continuas, index=1)
 
     fig = px.scatter(
         df_filtrado,
@@ -71,43 +93,39 @@ elif visualizacao == "🎞️ Dispersão Animada":
         animation_frame="age",
         color="diabetes",
         hover_name="gender",
-        size_max=12,
         range_x=[df[eixo_x].min(), df[eixo_x].max()],
         range_y=[df[eixo_y].min(), df[eixo_y].max()],
         title=f"{eixo_y} vs {eixo_x} por Idade"
     )
-
     st.plotly_chart(fig, use_container_width=True)
-    
-# --- Gráfico 3: Treemap Interativo ---
-st.subheader("🌳 Treemap Interativo")
 
-st.markdown(
-    "Explore proporções hierárquicas no dataset com base em colunas categóricas como gênero, "
-    "histórico de fumo e diabetes. Cada nível da hierarquia pode ser selecionado abaixo."
-)
+# ==========================
+# 4. Boxplot Comparativo
+# ==========================
+elif opcao == "Boxplot":
+    st.subheader("📦 Boxplot por Diabetes")
+    var = st.selectbox("Escolha a variável contínua:", cols_continuas)
 
-# Opções categóricas disponíveis
-opcoes_categoricas = ["gender", "smoking_history", "diabetes"]
+    fig = px.box(df_filtrado, x="diabetes", y=var, color="diabetes",
+                 labels={"diabetes": "Diabetes", var: var})
+    st.plotly_chart(fig, use_container_width=True)
 
-# Multiselect para o caminho hierárquico do Treemap
-path_selecionado = st.multiselect(
-    "Selecione a hierarquia do Treemap (ordem importa):",
-    options=opcoes_categoricas,
-    default=["gender", "smoking_history", "diabetes"]
-)
+# ==========================
+# 5. Histograma Comparativo
+# ==========================
+elif opcao == "Histograma":
+    st.subheader("📊 Histograma Empilhado")
+    var = st.selectbox("Escolha uma variável para distribuição:", cols_continuas)
 
-if len(path_selecionado) >= 2:
-    fig = px.treemap(
+    fig = px.histogram(
         df_filtrado,
-        path=path_selecionado,
+        x=var,
         color="diabetes",
-        color_continuous_scale=["lightblue", "lightgreen"],
-        title="Treemap Hierárquico"
+        nbins=40,
+        barmode="overlay",
+        labels={"diabetes": "Diabetes"}
     )
     st.plotly_chart(fig, use_container_width=True)
-else:
-    st.warning("Por favor, selecione pelo menos dois níveis hierárquicos para o Treemap.")
 
 
 
