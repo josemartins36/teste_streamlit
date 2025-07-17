@@ -8,41 +8,24 @@ st.set_page_config(page_title="Dashboard Interativo - Diabetes", layout="wide")
 st.title("📊 Dashboard Interativo - Predição de Diabetes")
 
 # =====================
-# 1. Carregamento e cache
+# 1. Carregar dados
 # =====================
 @st.cache_data
 def load_data():
     return pd.read_csv("diabetes_prediction_dataset.csv")
 
 df = load_data()
-df = df.sort_values(by="age")  # necessário para sliders e animações
+df = df.sort_values(by="age")  # ordenação para sliders
 cols_continuas = ['age', 'bmi', 'HbA1c_level', 'blood_glucose_level']
 
 # =====================
-# 2. Treinar o modelo
+# 2. Sidebar
 # =====================
-@st.cache_resource
-def train_model(df):
-    df_model = df.copy()
-    
-    # Codificar variáveis categóricas
-    df_model = pd.get_dummies(df_model, drop_first=True)
-    X = df_model.drop("diabetes", axis=1)
-    y = df_model["diabetes"]
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    return model, X.columns
-
-model, feature_names = train_model(df)
-
-# =====================
-# 3. Sidebar e filtros
-# =====================
-st.sidebar.title("🔎 Selecione um gráfico:")
-opcao = st.sidebar.radio("Escolha uma visualização:", ["Parallel Coordinates", "Boxplot", "Histograma", "Preditor de Diabetes"])
+st.sidebar.title("🔎 Selecione uma opção:")
+opcao = st.sidebar.radio(
+    "Escolha uma visualização:",
+    ["Parallel Coordinates", "Boxplot", "Histograma", "Preditor de Diabetes", "Acurácia do Modelo"]
+)
 
 grupo = st.sidebar.radio("Grupo a visualizar:", ["Todos", "Apenas Diabéticos", "Apenas Não Diabéticos"])
 if grupo == "Apenas Diabéticos":
@@ -86,13 +69,12 @@ elif opcao == "Histograma":
     st.plotly_chart(fig, use_container_width=True)
 
 # ==========================
-# 4. Preditor de Diabetes
+# 4. Preditor de Diabetes (entrada do usuário)
 # ==========================
 elif opcao == "Preditor de Diabetes":
-    st.subheader("🧠 Predição com Aprendizado de Máquina")
-    st.markdown("Preencha os dados abaixo para estimar a chance de diabetes com base no modelo Random Forest.")
+    st.subheader("🧠 Predição de Diabetes com Dados do Usuário")
+    st.markdown("Preencha os dados abaixo para estimar a probabilidade de diabetes:")
 
-    # Entradas do usuário
     with st.form("form_predicao"):
         age = st.slider("Idade", 0, 100, 30)
         bmi = st.slider("IMC", 10.0, 50.0, 25.0)
@@ -107,6 +89,7 @@ elif opcao == "Preditor de Diabetes":
         submitted = st.form_submit_button("🔍 Prever")
 
     if submitted:
+        # Pré-processamento
         input_dict = {
             "age": age,
             "bmi": bmi,
@@ -115,26 +98,45 @@ elif opcao == "Preditor de Diabetes":
             "gender_Male": 1 if gender == "Male" else 0,
             "hypertension": 1 if hypertension == "Yes" else 0,
             "heart_disease": 1 if heart_disease == "Yes" else 0,
-            # One-hot encoding para smoking
         }
 
-        # Adiciona variáveis de fumo (todas como 0 inicialmente)
         for cat in df["smoking_history"].unique():
             input_dict[f"smoking_history_{cat}"] = 1 if smoking_history == cat else 0
 
-        # Alinha as features com as esperadas pelo modelo
-        for col in feature_names:
+        df_model = pd.get_dummies(df.copy(), drop_first=True)
+        X = df_model.drop("diabetes", axis=1)
+        y = df_model["diabetes"]
+
+        model = RandomForestClassifier(n_estimators=100, random_state=42)
+        model.fit(X, y)
+
+        for col in X.columns:
             if col not in input_dict:
                 input_dict[col] = 0
 
-        input_df = pd.DataFrame([input_dict])[list(feature_names)]
+        input_df = pd.DataFrame([input_dict])[X.columns]
         pred = model.predict(input_df)[0]
         prob = model.predict_proba(input_df)[0][1]
 
-        st.markdown(f"### 🩺 Resultado: {'Diabético' if pred == 1 else 'Não Diabético'}")
+        st.markdown(f"### 🩺 Resultado: {'🟥 Diabético' if pred == 1 else '🟩 Não Diabético'}")
         st.markdown(f"### 🔬 Probabilidade de Diabetes: `{prob:.2%}`")
 
-        st.markdown("---")
-        st.subheader("📊 Importância das Variáveis")
-        importances = pd.Series(model.feature_importances_, index=feature_names)
-        st.bar_chart(importances.sort_values(ascending=False).head(10))
+# ==========================
+# 5. Acurácia do Modelo (90% treino, 10% teste)
+# ==========================
+elif opcao == "Acurácia do Modelo":
+    st.subheader("📈 Avaliação da Acurácia do Modelo")
+
+    df_model = pd.get_dummies(df.copy(), drop_first=True)
+    X = df_model.drop("diabetes", axis=1)
+    y = df_model["diabetes"]
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10, random_state=42)
+
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+
+    accuracy = model.score(X_test, y_test)
+
+    st.markdown("O modelo foi treinado com 90% dos dados e testado nos 10% restantes.")
+    st.markdown(f"### 🎯 Acurácia no conjunto de teste: `{accuracy:.2%}`")
